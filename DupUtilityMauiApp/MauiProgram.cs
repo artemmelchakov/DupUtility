@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using DupUtilityMauiApp.Data;
 using CommunityToolkit.Maui;
+using DupUtilityMauiApp.Data.Services.Interfaces;
+using DupUtilityMauiApp.Data.Services;
 
 namespace DupUtilityMauiApp;
 
@@ -25,6 +27,7 @@ public static class MauiProgram
 #endif
 
 		builder.Services.AddSingleton<WeatherForecastService>();
+		builder.Services.AddSingleton<IFileSystemService, FileSystemService>();
 
 		return builder.Build();
 	}

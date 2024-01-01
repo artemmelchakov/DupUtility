@@ -1,26 +1,134 @@
 ﻿@page "/"
-@using CommunityToolkit.Maui.Storage;
+@using CommunityToolkit.Maui.Storage
+@using DupUtilityMauiApp.Data.DTO
+@using DupUtilityMauiApp.Data.Enums
+@using DupUtilityMauiApp.Data.Services.Interfaces
+@inject IFileSystemService FileSystemService
 
 <h1>Hello, world!</h1>
 
 <p>It's my little program to find file duplicates on the device.</p>
 
 <button class="btn btn-primary" @onclick="ChooseFolder">Choose folder</button>
+<button class="btn btn-primary" @onclick="FindFileDuplicatesAsync">Find duplicates!</button>
+@*<div class="container" style="padding: 10px">
+    <div class="row" style="width: 420px">
+        <div class="col-sm" style="width: 320px">
+            Count per page:
+        </div>
+        <div class="col-sm" style="width: 50px">
+            <input type="number" style="width: 50px" @bind="@itemsCountPerPage" />
+        </div>
+    </div>
+</div>*@
+@*<div class="container">
+    <div class="row">
+        @for (int i = 0; i < PagesCount(); i++)
+        {
+            int pageNumber = i;
+            <div class="col-sm" style="width: 50px">
+                <button class="btn btn-primary" @onclick="() => GetSubfoldersSpan(pageNumber)" style="width: 50px">@(i + 1)</button>
+            </div>
+        }
+    </div>
+</div>*@
 
-<p>Choosen folder: @folder</p>
+<div>
+    <p>Choosen folder: @_path</p>
+    @*<p>Subfolders of choosen folder (total @subfoldersPaths.Count()):</p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var path in subfoldersPathsOnPage)
+            {
+                <tr>
+                    <td>@path</td>
+                </tr>
+            }
+        </tbody>
+    </table>*@
+    <p>Duplicates:</p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>DirectoryPath</th>
+                <th>Length</th>
+                <th>Extension</th>
+                <th>CreationTime</th>
+                <th>CreationTimeUtc</th>
+                <th>LastAccessTime</th>
+                <th>LastAccessTimeUtc</th>
+                <th>LastWriteTime</th>
+                <th>LastWriteTimeUtc</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var grouping in _findFileDuplicatesResponseDto.FileInfoDtosGroupedByDuplicateSign)
+            {
+                <tr>
+                    <td colspan="10">@grouping.Key</td>
+                </tr>
+                @foreach (var fileInfoItem in grouping.Select(x => x))
+                {
+                    <tr>
+                        <td>@fileInfoItem.Name</td>
+                        <td>@fileInfoItem.DirectoryPath</td>
+                        <td>@fileInfoItem.Length</td>
+                        <td>@fileInfoItem.Extension</td>
+                        <td>@fileInfoItem.CreationTime</td>
+                        <td>@fileInfoItem.CreationTimeUtc</td>
+                        <td>@fileInfoItem.LastAccessTime</td>
+                        <td>@fileInfoItem.LastAccessTimeUtc</td>
+                        <td>@fileInfoItem.LastWriteTime</td>
+                        <td>@fileInfoItem.LastWriteTimeUtc</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
 
 @code {
-    private string folder = Environment.CurrentDirectory;
+    //private const int DefaultItemsCountPerPage = 10;
+    //private int itemsCountPerPage = DefaultItemsCountPerPage;
+    private string _path = DriveInfo.GetDrives().FirstOrDefault().Name;
+    private FindFileDuplicatesResponseDto _findFileDuplicatesResponseDto = 
+        new() { FileInfoDtosGroupedByDuplicateSign = Enumerable.Empty<IGrouping<string, FileInfoDto>>() };
+    //private IEnumerable<string> subfoldersPaths = Array.Empty<string>();
+    //private IEnumerable<string> subfoldersPathsOnPage = Array.Empty<string>();
 
     /// <summary>
     /// Chooses a folder from the file system.
     /// </summary>
     private async Task ChooseFolder()
     {
-        var folderPickerResult = await FolderPicker.PickAsync(folder, CancellationToken.None);
+        var folderPickerResult = await FolderPicker.PickAsync(_path, CancellationToken.None);
         if (folderPickerResult.IsSuccessful)
         {
-            folder = folderPickerResult.Folder.Path;            
+            _path = folderPickerResult.Folder.Path;
         }
     }
+
+    private async Task FindFileDuplicatesAsync()
+    {
+        _findFileDuplicatesResponseDto = await FileSystemService.FindFileDuplicatesAsync(_path, DuplicateSign.EqualityInNameAndLengthOfFiles);
+    }
+
+    //private void GetSubfolders() => 
+    //    subfoldersPaths = Directory.GetDirectories(folderPath);
+
+    //private void GetSubfoldersSpan(int pageNumber) => 
+    //    subfoldersPathsOnPage = subfoldersPaths.Skip(pageNumber * itemsCountPerPage).Take(itemsCountPerPage);
+
+    //private int PagesCount()
+    //{
+    //    return GetModulo() == 0 ? DivideIt() : DivideIt() + 1;
+    //    int GetModulo() => subfoldersPaths.Count() % itemsCountPerPage;
+    //    int DivideIt() => subfoldersPaths.Count() / itemsCountPerPage;
+    //}
 }
